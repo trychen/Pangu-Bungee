@@ -1,0 +1,4 @@
+name: PanguBungee
+main: cn.mccraft.pangu.bungee.PanguBungee
+versin: ${project.version}
+author: trychen

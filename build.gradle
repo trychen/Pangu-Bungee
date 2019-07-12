@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+}
+
+group 'cn.mccraft.pangu'
+version '1.0'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven {
+        credentials {
+            username "$clayUsername"
+            password "$clayPassword"
+        }
+        url 'https://maven.mineclay.cn/repository/zhuagroup/'
+    }
+    maven { url 'https://jitpack.io' }
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots"}
+}
+
+configurations {
+    embed
+}
+
+dependencies {
+    implementation "net.md-5:bungeecord-api:1.12-SNAPSHOT"
+
+    compile "com.github.trychen:ByteDataStream:1.2-SNAPSHOT"
+    compile "com.github.Mouse0w0:FastReflection:1.0.1"
+
+    embed "com.github.trychen:ByteDataStream:1.2-SNAPSHOT"
+    embed "com.github.Mouse0w0:FastReflection:1.0.1"
+    embed "org.ow2.asm:asm-commons:5.2"
+    embed "org.ow2.asm:asm:5.2"
+}
+
+task embedJar(type: Jar) {
+    classifier "packaged"
+
+    from configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }
+    with jar
+}
+
+artifacts {
+    archives embedJar
+}
+
