@@ -16,5 +16,7 @@ public @interface Bridge {
 
     boolean also() default false;
 
+    Side from() default Side.BOTH;
+
     Class<? extends Persistence> persistence() default JsonPersistence.class;
 }

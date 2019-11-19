@@ -2,10 +2,9 @@ package cn.mccraft.pangu.bungee.bridge;
 
 import cn.mccraft.pangu.bungee.Bridge;
 import cn.mccraft.pangu.bungee.PanguBungee;
-import cn.mccraft.pangu.bungee.data.ByteStreamPersistence;
+import cn.mccraft.pangu.bungee.Side;
 import cn.mccraft.pangu.bungee.data.DataUtils;
-import cn.mccraft.pangu.bungee.data.JsonPersistence;
-import cn.mccraft.pangu.bungee.data.Persistence;
+import cn.mccraft.pangu.bungee.util.BufUtils;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.event.PluginMessageEvent;
@@ -25,21 +24,6 @@ public enum BridgeManager implements Listener {
     INSTANCE;
 
     private Map<String, Solution> solutions = new HashMap<>();
-    private Map<Class<? extends Persistence>, Persistence> persistences = new HashMap<Class<? extends Persistence>, Persistence>() {{
-        put(JsonPersistence.class, JsonPersistence.INSTANCE);
-        put(ByteStreamPersistence.class, ByteStreamPersistence.INSTANCE);
-    }};
-
-    public Persistence getPersistence(Class<? extends Persistence> clazz) {
-        return persistences.get(clazz);
-    }
-
-    public Map<Class<? extends Persistence>, Persistence> getPersistences() {
-        return persistences;
-    }
-
-    public void init() {
-    }
 
     public void register(Object object) {
         for (Method method : object.getClass().getMethods()) {
@@ -47,7 +31,7 @@ public enum BridgeManager implements Listener {
             Bridge bridge = method.getAnnotation(Bridge.class);
 
             try {
-                solutions.put(bridge.value(), new Solution(object, method, persistences.get(bridge.persistence()), bridge.also()));
+                solutions.put(bridge.value(), new Solution(object, method, PanguBungee.getPersistence(bridge.persistence()), bridge));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -57,21 +41,21 @@ public enum BridgeManager implements Listener {
     @EventHandler
     public void onPacket(PluginMessageEvent event) {
         if (!event.getTag().equals("pangu")) return;
-        if (!(event.getSender() instanceof ProxiedPlayer)) return;
-        if (!(event.getReceiver() instanceof Server)) return;
         DataInputStream input = new DataInputStream(new ByteArrayInputStream(event.getData()));
         try {
             int id = input.readByte();
-            byte[] keyBytes = new byte[DataUtils.readVarInt(input)];
-            input.read(keyBytes);
-            String key = new String(keyBytes, StandardCharsets.UTF_8);
+            String key = BufUtils.readString(input);
+
             Solution solution = solutions.get(key);
             if (solution != null) {
+
+                if (solution.getSide() == Side.SERVER && !(event.getSender() instanceof Server)) return;
+                if (solution.getSide() == Side.PLAYER && !(event.getSender() instanceof ProxiedPlayer)) return;
+
                 byte[] data = new byte[DataUtils.readVarInt(input)];
                 input.read(data);
 
-                solution.solve((ProxiedPlayer) event.getSender(), data);
-                if (!solution.isAlso())event.setCancelled(true);
+                if (!solution.solve((ProxiedPlayer) event.getSender(), data) || !solution.isAlso()) event.setCancelled(true);
             }
         } catch (Exception e) {
             PanguBungee.getInstance().getLogger().log(Level.SEVERE, "error while solving @Bridge",e);

@@ -56,7 +56,7 @@ public enum BridgeProxy implements InvocationHandler {
             names = (String[]) ArrayUtils.remove(names, 0);
         }
 
-        Persistence persistence = BridgeManager.INSTANCE.getPersistence(bridge.persistence());
+        Persistence persistence = PanguBungee.getPersistence(bridge.persistence());
         byte[] bytes = persistence.serialize(names, args, types, true);
 
         BridgeManager.INSTANCE.send(players, bridge.value(), bytes);

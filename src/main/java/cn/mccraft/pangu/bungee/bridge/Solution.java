@@ -1,5 +1,7 @@
 package cn.mccraft.pangu.bungee.bridge;
 
+import cn.mccraft.pangu.bungee.Bridge;
+import cn.mccraft.pangu.bungee.Side;
 import cn.mccraft.pangu.bungee.data.Persistence;
 import cn.mccraft.pangu.bungee.util.ArrayUtils;
 import com.github.mouse0w0.fastreflection.FastReflection;
@@ -20,32 +22,43 @@ public class Solution {
     private Type[] actualParameterTypes;
     private String[] actualParameterNames;
     private MethodAccessor methodAccessor;
-    private boolean also;
 
-    public Solution(Object instance, Method method, Persistence persistence, boolean also) throws Exception {
+    private boolean returnAlso;
+    private boolean also;
+    private Side side;
+
+    public Solution(Object instance, Method method, Persistence persistence, Bridge bridge) throws Exception {
         this.instance = instance;
         this.method = method;
         this.persistence = persistence;
-        this.also = also;
+        this.also = bridge.also();
+        this.side = bridge.from();
         this.withPlayer = method.getParameterCount() > 0 && ProxiedPlayer.class.isAssignableFrom(method.getParameterTypes()[0]);
         this.actualParameterTypes = withPlayer?(Type[]) ArrayUtils.remove(method.getGenericParameterTypes(), 0):method.getGenericParameterTypes();
         this.actualParameterNames = Arrays.stream(method.getParameters()).map(Parameter::getName).toArray(String[]::new);
         if (withPlayer) {
             this.actualParameterNames = (String[]) ArrayUtils.remove(actualParameterNames, 0);
         }
+        this.returnAlso = method.getReturnType() == boolean.class;
 
         this.methodAccessor = FastReflection.create(method);
     }
 
-    public void solve(ProxiedPlayer player, byte[] bytes) throws Exception {
+    public boolean solve(ProxiedPlayer player, byte[] bytes) throws Exception {
         Object[] objects = persistence.deserialize(actualParameterNames, bytes, actualParameterTypes);
         if (withPlayer) {
             objects = ArrayUtils.add(objects, 0, player);
         }
-        methodAccessor.invoke(instance, objects);
+        Object ret = methodAccessor.invoke(instance, objects);
+        if (returnAlso) return (boolean) ret;
+        else return false;
     }
 
     public boolean isAlso() {
         return also;
+    }
+
+    public Side getSide() {
+        return side;
     }
 }

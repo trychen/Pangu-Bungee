@@ -1,14 +1,14 @@
 plugins {
     id 'java'
+    id 'maven'
 }
 
 group 'cn.mccraft.pangu'
-version '1.0'
+version '1.3'
 
 sourceCompatibility = 1.8
 
 repositories {
-    mavenCentral()
     maven {
         credentials {
             username "$clayUsername"
@@ -16,8 +16,9 @@ repositories {
         }
         url 'https://maven.mineclay.cn/repository/zhuagroup/'
     }
+    maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
     maven { url 'https://jitpack.io' }
-    maven { url "https://oss.sonatype.org/content/repositories/snapshots"}
+    mavenCentral()
 }
 
 configurations {
@@ -25,12 +26,13 @@ configurations {
 }
 
 dependencies {
-    implementation "net.md-5:bungeecord-api:1.12-SNAPSHOT"
+    implementation 'net.md-5:BungeeCord:1294'
 
-    compile "com.github.trychen:ByteDataStream:1.2-SNAPSHOT"
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile "com.github.trychen:ByteDataStream:1.6"
     compile "com.github.Mouse0w0:FastReflection:1.0.1"
 
-    embed "com.github.trychen:ByteDataStream:1.2-SNAPSHOT"
+    embed "com.github.trychen:ByteDataStream:1.6"
     embed "com.github.Mouse0w0:FastReflection:1.0.1"
     embed "org.ow2.asm:asm-commons:5.2"
     embed "org.ow2.asm:asm:5.2"
@@ -47,3 +49,15 @@ artifacts {
     archives embedJar
 }
 
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "https://maven.mineclay.cn/repository/zhua-release/") {
+                authentication(userName: "$clayUsername", password: "$clayPassword")
+            }
+            pom.version = "$project.version"
+            pom.artifactId = "$project.name"
+            pom.groupId = "$project.group"
+        }
+    }
+}
