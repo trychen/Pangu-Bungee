@@ -24,7 +24,6 @@ public enum BridgeManager implements Listener {
     INSTANCE;
 
     private Map<String, Solution> solutions = new HashMap<>();
-
     public void register(Object object) {
         for (Method method : object.getClass().getMethods()) {
             if (!method.isAnnotationPresent(Bridge.class)) continue;
@@ -40,6 +39,8 @@ public enum BridgeManager implements Listener {
 
     @EventHandler
     public void onPacket(PluginMessageEvent event) {
+        if (event.getData()[0] >= 2) return;
+        if (event.getSender() instanceof Server) return;
         if (!event.getTag().equals("pangu")) return;
         DataInputStream input = new DataInputStream(new ByteArrayInputStream(event.getData()));
         try {
@@ -48,7 +49,6 @@ public enum BridgeManager implements Listener {
 
             Solution solution = solutions.get(key);
             if (solution != null) {
-
                 if (solution.getSide() == Side.SERVER && !(event.getSender() instanceof Server)) return;
                 if (solution.getSide() == Side.PLAYER && !(event.getSender() instanceof ProxiedPlayer)) return;
 
